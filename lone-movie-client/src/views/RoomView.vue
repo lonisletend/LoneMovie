@@ -1,23 +1,40 @@
 <template>
-  <div>
-    <section>
-      <b-field>
-        <b-input
-          placeholder="输入播放源(支持MP4, M3U8)"
-          v-model="source"
-        ></b-input>
-      </b-field>
-    </section>
-    <video-player
-      v-show="visible"
-      class="vjs-custom-skin"
-      ref="videoPlayer"
-      :options="playerOptions"
-      :playsinline="true"
-      @play="onPlayerPlay($event)"
-      @pause="onPlayerPause($event)"
-    >
-    </video-player>
+  <div class="container is-widescreen">
+    <div class="columns content">
+      <div class="column">
+        <section>
+          <b-field grouped group-multiline>
+            <b-button type="is-primary is-light" size="is-small">
+              RoomId: 123456
+            </b-button>
+            <b-button
+              type="is-success is-light"
+              size="is-small"
+              class="margin-left-10"
+              @click="copyLink"
+            >
+              复制链接
+            </b-button>
+          </b-field>
+          <b-field>
+            <b-input
+              placeholder="输入播放源(支持MP4, M3U8)"
+              v-model="source"
+            ></b-input>
+          </b-field>
+        </section>
+        <video-player
+          v-show="visible"
+          class="vjs-custom-skin"
+          ref="videoPlayer"
+          :options="playerOptions"
+          :playsinline="true"
+          @play="onPlayerPlay($event)"
+          @pause="onPlayerPause($event)"
+        >
+        </video-player>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -102,8 +119,19 @@ export default {
     onPlayerPause(player) {
       console.log(player);
     },
+    copyLink() {
+      this.$buefy.notification.open({
+        message: "复制成功, 快去分享给小伙伴吧!",
+        position: "is-top",
+        type: "is-success",
+      });
+    },
   },
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.margin-left-10 {
+  margin-left: 10px;
+}
+</style>
