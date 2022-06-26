@@ -1,7 +1,12 @@
 <template>
   <div>
     <section>
-      <b-tabs type="is-toggle" position="is-centered" expanded>
+      <b-tabs
+        v-model="activeTab"
+        type="is-toggle"
+        position="is-centered"
+        expanded
+      >
         <b-tab-item label="创建房间">
           <div class="container is-fluid">
             <section>
@@ -87,10 +92,14 @@
 </template>
 
 <script>
+import { createRoom } from "@/api";
+import { store } from "@/store";
+
 export default {
   name: "IndexView",
   data() {
     return {
+      activeTab: 0,
       createForm: {
         name: null,
         password: null,
@@ -103,18 +112,37 @@ export default {
       },
     };
   },
+  beforeMount() {
+    console.log(this.$route);
+    let query = this.$route.query;
+    if (!query) {
+      this.joinForm = query;
+    }
+  },
   methods: {
     clear(form, attr) {
       this[form][attr] = null;
     },
     create() {
       console.log(this.createForm);
-      let query = {
-        id: 1234,
-        key: "aaaaaa",
-        username: this.createForm.username,
-      };
-      this.$router.push({ name: "room", query: query });
+      createRoom(this.createForm).then((res) => {
+        if (res.data.code === 0) {
+          let roomInfo = res.data.data;
+          store.setRoomInfo(roomInfo);
+          let query = {
+            id: roomInfo.id,
+            key: roomInfo.key,
+            username: this.createForm.username,
+          };
+          this.$router.push({ name: "room", query: query });
+        } else {
+          this.$buefy.notification.open({
+            message: res.data.code + ": " + res.data.msg,
+            position: "is-top",
+            type: "is-danger",
+          });
+        }
+      });
     },
     join() {
       console.log(this.joinForm);

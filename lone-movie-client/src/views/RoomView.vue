@@ -1,53 +1,50 @@
 <template>
-  <div class="container is-widescreen">
-    <div class="columns content">
-      <div class="column">
-        <section>
-          <b-field grouped group-multiline>
-            <b-button type="is-primary is-light" size="is-small">
-              RoomId: 123456
-            </b-button>
-            <b-button
-              type="is-success is-light"
-              size="is-small"
-              class="margin-left-10"
-              @click="copyLink"
-            >
-              复制链接
-            </b-button>
-          </b-field>
-          <b-field>
-            <b-input
-              placeholder="输入播放源(支持MP4, M3U8)"
-              v-model="source"
-            ></b-input>
-          </b-field>
-        </section>
-        <video-player
-          v-show="visible"
-          class="vjs-custom-skin"
-          ref="videoPlayer"
-          :options="playerOptions"
-          :playsinline="true"
-          @play="onPlayerPlay($event)"
-          @pause="onPlayerPause($event)"
+  <div>
+    <section>
+      <b-field grouped group-multiline>
+        <b-button type="is-primary is-light" size="is-small">
+          {{ state.roomInfo ? state.roomInfo.name : "" }}
+        </b-button>
+        <b-button
+          type="is-success is-light"
+          size="is-small"
+          class="margin-left-10"
+          @click="copyLink"
         >
-        </video-player>
-      </div>
-    </div>
+          复制链接
+        </b-button>
+      </b-field>
+      <b-field>
+        <b-input
+          placeholder="输入播放源(支持MP4, M3U8)"
+          v-model="source"
+        ></b-input>
+      </b-field>
+    </section>
+    <video-player
+      v-show="visible"
+      class="vjs-custom-skin"
+      ref="videoPlayer"
+      :options="playerOptions"
+      :playsinline="true"
+      @play="onPlayerPlay($event)"
+      @pause="onPlayerPause($event)"
+    >
+    </video-player>
   </div>
 </template>
 
 <script>
 import "video.js/dist/video-js.css";
 import "vue-video-player/src/custom-theme.css";
-
 import { videoPlayer } from "vue-video-player";
 import videojs from "video.js";
+import "videojs-contrib-hls";
+
+import { store } from "@/store";
+import { getRoom } from "@/api";
 
 window.videojs = videojs;
-// hls plugin for videojs6
-import "videojs-contrib-hls";
 
 export default {
   name: "RoomView",
@@ -74,11 +71,22 @@ export default {
           "https://surmon-china.github.io/vue-quill-editor/static/images/surmon-5.jpg",
       },
       source: null,
+      // room Info
+      state: store.state,
+      joinForm: {
+        id: null,
+        password: null,
+        key: null,
+        username: null,
+      },
     };
   },
   computed: {},
   beforeMount() {
     console.log(this.$route.query);
+    // console.log(this.roomInfo);
+    this.joinForm = this.$route.query;
+    this.init_room();
   },
   mounted() {},
   watch: {
@@ -113,6 +121,61 @@ export default {
     },
   },
   methods: {
+    init_room() {
+      if (!this.joinForm.id || !this.joinForm.key) {
+        this.$router.push({ path: "/", query: this.joinForm });
+        return;
+      }
+      if (this.joinForm.username) {
+        this.getAndJoinRoom();
+      } else {
+        this.$buefy.dialog.prompt({
+          message: `完善用户名:`,
+          inputAttrs: {
+            placeholder: "e.g. Walter",
+            maxlength: 10,
+          },
+          trapFocus: true,
+          onConfirm: (value) => {
+            this.joinForm.username = value;
+            this.getAndJoinRoom();
+          },
+          onCancel: () => {
+            console.log(this.joinForm);
+            this.$router.push({ path: "/", query: this.joinForm });
+          },
+        });
+      }
+    },
+    joinRoom() {
+      // 校验form
+      this.getAndJoinRoom();
+    },
+    getAndJoinRoom() {
+      getRoom(this.joinForm).then((res) => {
+        if (res.data.code === 0) {
+          console.log("res => ", res.data.data);
+          let roomInfo = res.data.data;
+          roomInfo.sharedLink =
+            location.protocol +
+            "//" +
+            location.host +
+            "/#/room" +
+            "?id=" +
+            roomInfo.id +
+            "&key=" +
+            roomInfo.key;
+          store.setRoomInfo(roomInfo);
+          // Join Room.
+        } else {
+          this.$buefy.notification.open({
+            message: res.data.code + ": " + res.data.msg,
+            position: "is-top",
+            type: "is-danger",
+          });
+        }
+      });
+    },
     onPlayerPlay(player) {
       console.log(player);
     },
@@ -120,6 +183,7 @@ export default {
       console.log(player);
     },
     copyLink() {
+      console.log(this.state.roomInfo.sharedLink);
       this.$buefy.notification.open({
         message: "复制成功, 快去分享给小伙伴吧!",
         position: "is-top",
