@@ -21,6 +21,14 @@ class Ret:
             'data': self.data
         })
 
+    def as_dict(self):
+        return dict(
+            status=self.status,
+            code=self.code,
+            msg=self.msg,
+            data=self.data
+        )
+
     @staticmethod
     def success_ret(data=None):
         ret = Ret(True, 0, '', data)
@@ -32,6 +40,11 @@ class Ret:
         return ret.serialize()
 
     @staticmethod
+    def success_msg_dict(msg):
+        ret = Ret(True, 0, msg, None)
+        return ret.as_dict()
+
+    @staticmethod
     def error_ret(code=1, data=None, msg="error"):
         ret = Ret(False, code, msg, data)
         return ret.serialize()
@@ -41,3 +54,7 @@ class Ret:
         ret = Ret(False, code, msg, None)
         return ret.serialize()
 
+    @staticmethod
+    def error_msg_dict(code=1, msg="error"):
+        ret = Ret(False, code, msg, None)
+        return ret.as_dict()

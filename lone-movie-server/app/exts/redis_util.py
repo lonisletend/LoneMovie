@@ -64,6 +64,11 @@ class RedisUtil:
             raise RedisOptException("Redis set failed!")
 
     @staticmethod
+    def hmset_with_expire(key, value, expire):
+        RedisUtil.hmset(key, value)
+        RedisUtil.expire(key, expire)
+
+    @staticmethod
     def hgetall(key):
         ret = redis_client.hgetall(key)
         return decode_redis(ret) if ret is not None else {}

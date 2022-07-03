@@ -4,12 +4,13 @@ from flask import Blueprint, request, current_app as app
 
 from ..models.room import Room
 from ..exts.redis_util import RedisUtil
-from ..exts.enum import ErrCode, RedisKey
+from ..exts.enum import ErrCode, RedisKey, RedisExpire
 from ..exts.result import Ret
 
 room = Blueprint('/room', __name__)
 
 LOG_PATTERN = '[ROUTE:({0})] {1}'
+
 
 @room.route('/')
 def index():
@@ -24,8 +25,8 @@ def create():
     password = Room.generate_password(data['password'])
     key = Room.generate_key(id, password)
     room = Room(id, data['name'], password, key, data['username'], '')
-    RedisUtil.hmset(RedisKey.ROOM_ID_INFO.value.format(room.id), room.as_full_dict())
-
+    RedisUtil.hmset_with_expire(RedisKey.ROOM_ID_INFO.value.format(room.id), room.as_full_dict(),
+                                6 * RedisExpire.HOUR.value)
     return Ret.success_ret(room.as_dict())
 
 
@@ -43,4 +44,3 @@ def get():
     if not check:
         return Ret.error_msg(ErrCode.AUTHENTICATION_FAILED.value, "权限校验失败!")
     return Ret.success_ret(room.as_dict())
-

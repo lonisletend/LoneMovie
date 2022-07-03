@@ -26,10 +26,6 @@ class ConfigType(Enum):
 class RedisKey(Enum):
     ROOM_INCREMENT_ID = 'lonemovie:room:increment_id'
     ROOM_ID_INFO = 'lonemovie:room:id:{0}'
-    CAPTCHA_IP_REQUEST_COUNT = 'lonestack:captcha:ip:{0}:date:{1}'
-    CAPTCHA_EMAIL_REQUEST_COUNT = 'lonestack:captcha:email:{0}:date:{1}'
-    CAPTCHA_EMAIL_RESULT = 'lonestack:captcha:email:{0}'
-    CAPTCHA_EMAIL_INVALID = 'lonestack:captcha:invalid:email:{0}:date:{1}'
 
 
 class RedisExpire(Enum):

@@ -3,7 +3,15 @@
     <section>
       <b-field grouped group-multiline>
         <b-button type="is-primary is-light" size="is-small">
-          {{ state.roomInfo ? state.roomInfo.name : "" }}
+          房间名: {{ state.roomInfo ? state.roomInfo.name : "" }}
+        </b-button>
+        <b-button
+          type="is-success is-light"
+          size="is-small"
+          class="margin-left-10"
+          @click="testVideo"
+        >
+          测试视频
         </b-button>
         <b-button
           type="is-success is-light"
@@ -11,7 +19,7 @@
           class="margin-left-10"
           @click="copyLink"
         >
-          复制链接
+          分享房间
         </b-button>
       </b-field>
       <b-field>
@@ -51,6 +59,17 @@ export default {
   components: {
     videoPlayer,
   },
+  sockets: {
+    connect: function () {
+      console.log(" ==> socket connected");
+    },
+    customEmit: function (data) {
+      console.log(
+        data +
+          "this method was fired by the socket server. eg: io.emit('customEmit', data)"
+      );
+    },
+  },
   data() {
     return {
       visible: false,
@@ -88,7 +107,17 @@ export default {
     this.joinForm = this.$route.query;
     this.init_room();
   },
-  mounted() {},
+  mounted() {
+    console.log(" ==> mounted");
+    this.$socket.client.on("notice", (ret) => {
+      console.log("[EVENT: (notice)] ==> ", ret);
+      this.$buefy.notification.open({
+        message: ret.msg,
+        position: "is-top",
+        type: ret.code === 0 ? "is-success" : "is-danger",
+      });
+    });
+  },
   watch: {
     source(val) {
       console.log(val);
@@ -148,8 +177,8 @@ export default {
       }
     },
     joinRoom() {
-      // 校验form
-      this.getAndJoinRoom();
+      // Join socket room
+      this.$socket.client.emit("join", this.joinForm);
     },
     getAndJoinRoom() {
       getRoom(this.joinForm).then((res) => {
@@ -167,6 +196,7 @@ export default {
             roomInfo.key;
           store.setRoomInfo(roomInfo);
           // Join Room.
+          this.joinRoom();
         } else {
           this.$buefy.notification.open({
             message: res.data.code + ": " + res.data.msg,
@@ -184,11 +214,15 @@ export default {
     },
     copyLink() {
       console.log(this.state.roomInfo.sharedLink);
+      this.$clipboard(this.state.roomInfo.sharedLink);
       this.$buefy.notification.open({
-        message: "复制成功, 快去分享给小伙伴吧!",
+        message: "分享链接复制成功, 快去分享给小伙伴吧!",
         position: "is-top",
         type: "is-success",
       });
+    },
+    testVideo() {
+      this.source = "http://vjs.zencdn.net/v/oceans.mp4";
     },
   },
 };
