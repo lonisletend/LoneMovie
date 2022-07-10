@@ -17,6 +17,14 @@
           type="is-success is-light"
           size="is-small"
           class="margin-left-10"
+          @click="syncSource"
+        >
+          同步播放源
+        </b-button>
+        <b-button
+          type="is-success is-light"
+          size="is-small"
+          class="margin-left-10"
           @click="copyLink"
         >
           分享房间
@@ -98,6 +106,8 @@ export default {
         key: null,
         username: null,
       },
+      synced: false,
+      currTime: 0,
     };
   },
   computed: {},
@@ -117,6 +127,28 @@ export default {
         position: "is-top",
         type: ret.code === 0 ? "is-success" : "is-danger",
       });
+    });
+    this.$socket.client.on("syncSource", (ret) => {
+      console.log("[EVENT: (syncSource)] ==> ", ret);
+      this.source = ret.data;
+      this.$buefy.notification.open({
+        message: "播放源已同步!",
+        position: "is-top",
+        type: ret.code === 0 ? "is-success" : "is-danger",
+      });
+    });
+    this.$socket.client.on("syncPlay", (ret) => {
+      console.log("syncPlay ==> ", ret);
+      this.synced = !this.synced;
+      this.currTime = ret.data;
+      console.log("videoPlayer ==> ", this.$refs);
+      this.$refs.videoPlayer.player.play();
+    });
+    this.$socket.client.on("syncPause", (ret) => {
+      console.log("syncPause ==> ", ret);
+      this.synced = !this.synced;
+      this.currTime = ret.data;
+      this.$refs.videoPlayer.player.pause();
     });
   },
   watch: {
@@ -186,6 +218,7 @@ export default {
         if (res.data.code === 0) {
           console.log("res => ", res.data.data);
           let roomInfo = res.data.data;
+          roomInfo.id = Number(roomInfo.id);
           roomInfo.sharedLink =
             location.protocol +
             "//" +
@@ -196,6 +229,7 @@ export default {
             "&key=" +
             roomInfo.key;
           store.setRoomInfo(roomInfo);
+          this.source = roomInfo.source;
           // Join Room.
           this.joinRoom();
         } else {
@@ -207,11 +241,48 @@ export default {
         }
       });
     },
+    syncSource() {
+      let sourceParam = {
+        id: this.state.roomInfo.id,
+        key: this.state.roomInfo.key,
+        source: this.source,
+      };
+      this.$socket.client.emit("syncSource", sourceParam);
+    },
+    // listen event
     onPlayerPlay(player) {
-      console.log(player);
+      console.log("synced ===> ", this.synced);
+      if (this.synced) {
+        console.log(" ==> sync play! currTime ==> ", this.currTime);
+        player.currentTime(this.currTime);
+        this.synced = false;
+      } else {
+        console.log("player play! currTime ==> ", player.currentTime());
+        this.synced = true;
+        let syncParam = {
+          id: this.state.roomInfo.id,
+          key: this.state.roomInfo.key,
+          currTime: player.currentTime(),
+        };
+        this.$socket.client.emit("syncPlay", syncParam);
+      }
     },
     onPlayerPause(player) {
-      console.log(player);
+      console.log("synced ===> ", this.synced);
+      if (this.synced) {
+        console.log(" ==> sync pause! currTime ==> ", this.currTime);
+        player.currentTime(this.currTime);
+        this.synced = false;
+      } else {
+        console.log("player pause! currTime ==> ", player.currentTime());
+        this.synced = true;
+        let syncParam = {
+          id: this.state.roomInfo.id,
+          key: this.state.roomInfo.key,
+          currTime: player.currentTime(),
+        };
+        this.$socket.client.emit("syncPause", syncParam);
+      }
     },
     copyLink() {
       console.log(this.state.roomInfo.sharedLink);

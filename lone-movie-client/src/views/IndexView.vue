@@ -128,6 +128,7 @@ export default {
       createRoom(this.createForm).then((res) => {
         if (res.data.code === 0) {
           let roomInfo = res.data.data;
+          roomInfo.id = Number(roomInfo.id);
           store.setRoomInfo(roomInfo);
           let query = {
             id: roomInfo.id,
