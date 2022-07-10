@@ -105,6 +105,7 @@ export default {
     console.log(this.$route.query);
     // console.log(this.roomInfo);
     this.joinForm = this.$route.query;
+    this.joinForm.id = Number(this.joinForm.id);
     this.init_room();
   },
   mounted() {
