@@ -21,6 +21,14 @@
         >
           分享房间
         </b-button>
+        <b-button
+          type="is-success is-light"
+          size="is-small"
+          class="margin-left-10"
+          @click="echo"
+        >
+          ECHO
+        </b-button>
       </b-field>
       <b-field>
         <b-input
@@ -92,7 +100,7 @@ export default {
       source: null,
       // room Info
       state: store.state,
-      joinForm: {
+      joinParam: {
         id: null,
         password: null,
         key: null,
@@ -104,11 +112,13 @@ export default {
   beforeMount() {
     console.log(this.$route.query);
     // console.log(this.roomInfo);
-    this.joinForm = this.$route.query;
+    this.joinParam = this.$route.query;
     this.init_room();
   },
   mounted() {
     console.log(" ==> mounted");
+    this.$socket.client.connect();
+    console.log("CONNECTED ? ==> ", this.$socket.connected);
     this.$socket.client.on("notice", (ret) => {
       console.log("[EVENT: (notice)] ==> ", ret);
       this.$buefy.notification.open({
@@ -116,6 +126,9 @@ export default {
         position: "is-top",
         type: ret.code === 0 ? "is-success" : "is-danger",
       });
+    });
+    this.$socket.client.on("echo", (ret) => {
+      console.log("[EVENT: (echo)] ==> ", ret);
     });
   },
   watch: {
@@ -151,11 +164,11 @@ export default {
   },
   methods: {
     init_room() {
-      if (!this.joinForm.id || !this.joinForm.key) {
-        this.$router.push({ path: "/", query: this.joinForm });
+      if (!this.joinParam.id || !this.joinParam.key) {
+        this.$router.push({ path: "/", query: this.joinParam });
         return;
       }
-      if (this.joinForm.username) {
+      if (this.joinParam.username) {
         this.getAndJoinRoom();
       } else {
         this.$buefy.dialog.prompt({
@@ -166,22 +179,22 @@ export default {
           },
           trapFocus: true,
           onConfirm: (value) => {
-            this.joinForm.username = value;
+            this.joinParam.username = value;
             this.getAndJoinRoom();
           },
           onCancel: () => {
-            console.log(this.joinForm);
-            this.$router.push({ path: "/", query: this.joinForm });
+            console.log(this.joinParam);
+            this.$router.push({ path: "/", query: this.joinParam });
           },
         });
       }
     },
     joinRoom() {
       // Join socket room
-      this.$socket.client.emit("join", this.joinForm);
+      this.$socket.client.emit("join", this.joinParam);
     },
     getAndJoinRoom() {
-      getRoom(this.joinForm).then((res) => {
+      getRoom(this.joinParam).then((res) => {
         if (res.data.code === 0) {
           console.log("res => ", res.data.data);
           let roomInfo = res.data.data;
@@ -223,6 +236,9 @@ export default {
     },
     testVideo() {
       this.source = "http://vjs.zencdn.net/v/oceans.mp4";
+    },
+    echo() {
+      this.$socket.client.emit("echo", this.joinParam);
     },
   },
 };

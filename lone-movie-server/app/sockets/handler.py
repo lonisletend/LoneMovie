@@ -34,5 +34,5 @@ def init_handlers(socketio: SocketIO):
 
     @socketio.on('echo')
     def on_echo(data):
-        app.logger.info(LOG_PARAM_PATTERN.format('join', str(data)))
+        app.logger.info(LOG_PARAM_PATTERN.format('echo', str(data)))
         emit('echo', data, to=data['id'])
