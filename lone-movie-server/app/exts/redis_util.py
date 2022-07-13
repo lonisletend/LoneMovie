@@ -61,7 +61,11 @@ class RedisUtil:
     def hmset(key, value):
         ret = redis_client.hmset(key, value)
         if not ret:
-            raise RedisOptException("Redis set failed!")
+            raise RedisOptException("Redis hmset failed!")
+
+    @staticmethod
+    def hset(key, field, value):
+        ret = redis_client.hset(key, field, value)
 
     @staticmethod
     def hmset_with_expire(key, value, expire):

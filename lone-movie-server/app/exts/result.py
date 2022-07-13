@@ -35,6 +35,11 @@ class Ret:
         return ret.serialize()
 
     @staticmethod
+    def success_ret_dict(data=None):
+        ret = Ret(True, 0, '', data)
+        return ret.as_dict()
+
+    @staticmethod
     def success_msg(msg):
         ret = Ret(True, 0, msg, None)
         return ret.serialize()
